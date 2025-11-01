@@ -38,7 +38,7 @@ jobs:
           find . -type f -name "*.pbix" -not -path "./.git/*" | while read pbix_file; do
             echo "Extracting: $pbix_file"
             # Precisamos usar o caminho completo do executável dentro do contêiner
-            ./pbi-tools.local.cmd extract "$pbix_file"
+            /app/pbi-tools/pbi-tools.core extract "$pbix_file"
           done
           echo "Extraction complete."
 
