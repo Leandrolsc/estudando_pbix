@@ -1,4 +1,3 @@
-# Nome do Workflow
 name: CI - Extract PBIX Source Files
 
 on:
@@ -15,24 +14,16 @@ jobs:
     permissions:
       contents: write 
 
+    container:
+      image: ghcr.io/pbi-tools/pbi-tools-core:latest
+
     steps:
       - name: 1. Checkout Repository
         uses: actions/checkout@v4
-
-      - name: 2. Setup .NET 8 SDK
-        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          lfs: 'true' # Adicionado 'lfs: true' caso seus .pbix sejam grandes e usem Git LFS
 
-      - name: 3. Install pbi-tools.core
-        run: |
-          dotnet tool install --global pbi-tools.core
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-      - name: 4. Verify pbi-tools installation
-        run: pbi-tools --version
-
-      - name: 5. Clean old extracted files
+      - name: 2. Clean old extracted files
         run: |
           echo "Cleaning up old *.pbitool directories..."
           # Encontra e remove quaisquer diretórios .pbitool existentes
@@ -40,18 +31,18 @@ jobs:
           find . -type d -name "*.pbitool" -not -path "./.git/*" -exec rm -rf {} +
           echo "Cleanup complete."
 
-      - name: 6. Extract all PBIX files
+      - name: 3. Extract all PBIX files
         run: |
           echo "Searching for PBIX files..."
           # Encontra todos os arquivos .pbix (exceto no .git) e executa a extração
           find . -type f -name "*.pbix" -not -path "./.git/*" | while read pbix_file; do
             echo "Extracting: $pbix_file"
-            # O pbi-tools criará uma pasta ex: "MeuRelatorio.pbitool"
-            pbi-tools extract "$pbix_file"
+            # Precisamos usar o caminho completo do executável dentro do contêiner
+            /app/pbi-tools/pbi-tools.core extract "$pbix_file"
           done
           echo "Extraction complete."
 
-      - name: 7. Commit extracted files
+      - name: 4. Commit extracted files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           # Mensagem do commit
@@ -63,3 +54,4 @@ jobs:
           # - Adicionar todas as mudanças (novos, modificados, excluídos)
           # - Fazer o commit
           # - Fazer o push para o branch atual
+
