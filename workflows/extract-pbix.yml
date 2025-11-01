@@ -1,0 +1,65 @@
+# Nome do Workflow
+name: CI - Extract PBIX Source Files
+
+on:
+  push:
+    branches:
+      - main 
+    paths:
+      - '**.pbix' 
+
+jobs:
+  extract-pbix:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write 
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: 3. Install pbi-tools
+        run: |
+          dotnet tool install --global pbi-tools
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: 4. Verify pbi-tools installation
+        run: pbi-tools --version
+
+      - name: 5. Clean old extracted files
+        run: |
+          echo "Cleaning up old *.pbitool directories..."
+          # Encontra e remove quaisquer diretórios .pbitool existentes
+          # Isso garante que se um .pbix for excluído, sua pasta .pbitool também será
+          find . -type d -name "*.pbitool" -not -path "./.git/*" -exec rm -rf {} +
+          echo "Cleanup complete."
+
+      - name: 6. Extract all PBIX files
+        run: |
+          echo "Searching for PBIX files..."
+          # Encontra todos os arquivos .pbix (exceto no .git) e executa a extração
+          find . -type f -name "*.pbix" -not -path "./.git/*" | while read pbix_file; do
+            echo "Extracting: $pbix_file"
+            # O pbi-tools criará uma pasta ex: "MeuRelatorio.pbitool"
+            pbi-tools extract "$pbix_file"
+          done
+          echo "Extraction complete."
+
+      - name: 7. Commit extracted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          # Mensagem do commit
+          commit_message: "CI: Auto-extract PBIX source files [skip ci]"
+          # O [skip ci] é crucial para evitar que este commit acione
+          # o workflow novamente, causando um loop infinito.
+          # Esta Action lida automaticamente com:
+          # - Verificar se há mudanças
+          # - Adicionar todas as mudanças (novos, modificados, excluídos)
+          # - Fazer o commit
+          # - Fazer o push para o branch atual

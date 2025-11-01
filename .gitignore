@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.log
