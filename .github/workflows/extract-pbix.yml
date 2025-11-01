@@ -24,7 +24,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 3. Install pbi-tools
+      - name: 3. Install pbi-tools.core
         run: |
           dotnet tool install --global pbi-tools.core
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
